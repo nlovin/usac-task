@@ -11,7 +11,7 @@ check.packages <- function(pkg){
 
 
 # install packages
-packages<-c("tidyverse","RSocrata", "fs")
+packages<-c("tidyverse","RSocrata", "fs", "skimr")
 check.packages(packages)
 
 rm(check.packages, packages)
