@@ -31,9 +31,6 @@ ggplot(data = frn) +
        x = "Service Type", fill = "Funding Year", 
        subtitle = "by year")
 
-
-
-
 ### Entity type by Year
 ggplot(data = frn) +
   geom_bar(aes(x = organization_entity_type_name, group = factor(funding_year), fill = factor(funding_year)),position = "dodge") +
