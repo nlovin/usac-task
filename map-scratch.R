@@ -62,7 +62,7 @@ US_geo %>%
   tm_shape(., projection = US.proj) +
   tm_layout(frame = FALSE) +
   tm_fill(col = "ammount.per.person",
-          breaks = c(0,5,10,25,50,350)) +
+          style = "quantile") +
   tm_borders() +
   tm_facets(by="funding_year")
 
@@ -77,7 +77,46 @@ US_geo %>%
 
 
 US_geo %>% 
-  tm
+  filter(funding_year != 2016) %>% 
+  tm_shape(., projection = US.proj) +
+  tm_layout(frame = FALSE) +
+  tm_fill(col = "yoy_pct.ammount",
+          style = "quantile",
+          midpoint = NA) +
+  tm_borders() +
+  tm_facets(by="funding_year")
+
+US_geo %>% 
+  filter(funding_year != 2016) %>% 
+  tm_shape(., projection = US.proj) +
+  tm_fill(col = "yoy.ammount",
+          style = "quantile",
+          midpoint = NA) +
+  tm_borders() +
+  tm_text(text = "yoy_pct.ammount",
+          size = .6,
+          shadow = TRUE) +
+  tm_facets(by="funding_year") +
+  tm_layout(legend.outside.position = "right" , legend.outside.size = .1)
+
+
+
+## ggplot testing
+US_geo %>% 
+  filter(funding_year == 2017) %>%
+  ggplot() +
+  geom_sf(aes(fill = yoy_pct.ammount)) +
+  viridis::scale_fill_viridis() +
+  theme(panel.background = element_rect(fill = "transparent"),
+        panel.grid.major = element_line(colour = "transparent"),
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank(), 
+        axis.ticks = element_blank()) +
+  coord_sf(crs = US.proj)
+  
+
+
+summary(US_geo$yoy_pct.ammount)
 
 AK_map <- tm_shape(AK_geo, projection = AK.proj) +
   tm_polygons() +
