@@ -24,7 +24,7 @@
 ## Run Source File
 
 
-source(setup.R)
+source("setup.R")
 
 ## ---------------------------
 ## Access the data
@@ -43,9 +43,16 @@ FRN.status <- read.socrata("https://opendata.usac.org/resource/qdmp-ygft.csv?For
 save(FRN.status, file = "data/FRN_status_raw.Rdata") 
 
 write_csv(FRN.status, path = "data/FRN_status_raw.csv")
+frn %>%
+  head(500) %>% 
+  write_csv(path = "data/subset.csv")
 
 ## Rdata file is much more efficent at 41MB vs 200MB csv file
 
+## ---------------------------
+## Load data
+
+load("Data/FRN_status_raw.Rdata")
 
 
 ## ---------------------------
@@ -58,23 +65,40 @@ frn <- FRN.status %>%
 
 ## Exploring main variables
 frn %>% skimr::skim(funding_year, funding_request_number, funding_commitment_request)
+frn %>% group_by(funding_year) %>% skimr::skim(funding_request_number, funding_commitment_request,avg_cost_per_ft_of_plant, state,bid_count)
+frn %>% skimr::skim()
 
-
-## Check to see if there are any duplicate funding request ids
+## Double check to see if there are any duplicate funding request ids
 frn %>% 
   count(funding_request_number) %>% 
   filter(n > 1)
 
-### Check for missing funding request ids
+### Double check for missing funding request ids
 frn %>% 
   filter(is.na(funding_request_number))
+
+### Double check for missing funding request amounts
+frn %>% 
+  filter(is.na(funding_commitment_request)) %>% 
+  select(funding_year, funding_request_number, funding_commitment_request)
 
 ## Request count by year
 frn %>% 
   group_by(funding_year) %>% 
-  summarise(requests = n())
+  summarise(requests = n(),
+            ammount.req = sum(funding_commitment_request,na.rm = T)) %>% 
+  mutate(yoy.req = requests - lag(requests),
+         yoy_pct.req = 100*((requests - lag(requests))/requests),
+         yoy.ammount = ammount.req - lag(ammount.req),
+         yoy_pct.ammount = 100*((ammount.req - lag(ammount.req))/ammount.req))
+  
 
 
-
+frn %>% 
+  group_by(funding_year) %>% 
+  summarise(a = prettyNum( sum(funding_commitment_request,na.rm = T), big.mark = "," ))
 
 ## YoY Requests
+
+bids <- frn %>% filter(bid_count > 100) %>% arrange(bid_count)
+library(hrbrthemes)
