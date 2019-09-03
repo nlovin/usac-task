@@ -42,6 +42,7 @@ FRN.status <- read.socrata("https://opendata.usac.org/resource/qdmp-ygft.csv?For
 
 save(FRN.status, file = "data/FRN_status_raw.Rdata") 
 
+## Create subset file to explore data structure
 write_csv(FRN.status, path = "data/FRN_status_raw.csv")
 frn %>%
   head(500) %>% 
@@ -93,22 +94,29 @@ frn %>%
          yoy_pct.ammount = 100*((ammount.req - lag(ammount.req))/ammount.req))
   
 
+## ---------------------------
 ## Total Requests & Request Ammounts by Service Type
 service <- frn %>% 
   group_by(form_471_service_type_name,funding_year) %>% 
   summarise(requests = n(),
-            dollars = sum(funding_commitment_request, na.rm = T))
+            dollars = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.dollars = dollars - lag(dollars),
+         yoy_pct.dollars = ((dollars - lag(dollars))/dollars),
+         yoy.requests = requests - lag(requests),
+         yoy_pct.requests = ((requests - lag(requests))/requests))
 
 ## Total Requests & Request Ammounts by Entity
 entity <- frn %>% 
   group_by(organization_entity_type_name,funding_year) %>% 
   summarise(requests = n(),
-            dollars = sum(funding_commitment_request, na.rm = T))
+            dollars = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.dollars = dollars - lag(dollars),
+         yoy_pct.dollars = ((dollars - lag(dollars))/dollars),
+         yoy.requests = requests - lag(requests),
+         yoy_pct.requests = ((requests - lag(requests))/requests))
 
 
-
-
-
+## ---------------------------
 #frn %>% 
   group_by(funding_year) %>% 
   summarise(a = prettyNum( sum(funding_commitment_request,na.rm = T), big.mark = "," ))
