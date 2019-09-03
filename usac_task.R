@@ -115,6 +115,17 @@ entity <- frn %>%
          yoy.requests = requests - lag(requests),
          yoy_pct.requests = ((requests - lag(requests))/requests))
 
+## Total Requests & Request Ammounts by Entity, dropping Voice requests
+entity.no_voice <- frn %>% 
+  filter(form_471_service_type_name != "Voice") %>% 
+  group_by(organization_entity_type_name,funding_year) %>% 
+  summarise(requests = n(),
+            dollars = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.dollars = dollars - lag(dollars),
+         yoy_pct.dollars = ((dollars - lag(dollars))/dollars),
+         yoy.requests = requests - lag(requests),
+         yoy_pct.requests = ((requests - lag(requests))/requests))
+
 
 ## ---------------------------
 #frn %>% 
