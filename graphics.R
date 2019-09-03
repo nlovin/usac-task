@@ -70,6 +70,41 @@ str(frn$fcdl_letter_date)
 
 
 
+## Total Requests & Request Ammounts by Service Type
+ggplot(data = service) +
+  geom_bar(aes(x = factor(form_471_service_type_name),
+               y = dollars,
+               fill = factor(funding_year),
+               group = factor(funding_year)),
+           position = "dodge",
+           stat = "identity") +
+  scale_fill_ipsum() +
+  theme_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Total Request Amount by Service", 
+       x = "Service Type", fill = "Funding Year", 
+       subtitle = "2016:2018")
+
+
+## Total Requests & Request Ammounts by Entity
+ggplot(data = entity) +
+  geom_bar(aes(x = factor(organization_entity_type_name),
+               y = dollars,
+               fill = factor(funding_year),
+               group = factor(funding_year)),
+           position = "dodge",
+           stat = "identity") +
+  scale_fill_ipsum() +
+  theme_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Total Request Amount by Service", 
+       x = "Service Type", fill = "Funding Year", 
+       subtitle = "2016:2018")
+
+
+
+
+
 ### Checking how many double codings there are for voice + internet
 frn <- frn %>% 
   mutate(narrative2 = tolower(narrative),

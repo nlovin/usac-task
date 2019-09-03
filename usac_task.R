@@ -82,7 +82,7 @@ frn %>%
   filter(is.na(funding_commitment_request)) %>% 
   select(funding_year, funding_request_number, funding_commitment_request)
 
-## Request count by year
+## YoY Calculation
 frn %>% 
   group_by(funding_year) %>% 
   summarise(requests = n(),
@@ -93,12 +93,25 @@ frn %>%
          yoy_pct.ammount = 100*((ammount.req - lag(ammount.req))/ammount.req))
   
 
+## Total Requests & Request Ammounts by Service Type
+service <- frn %>% 
+  group_by(form_471_service_type_name,funding_year) %>% 
+  summarise(requests = n(),
+            dollars = sum(funding_commitment_request, na.rm = T))
 
-frn %>% 
+## Total Requests & Request Ammounts by Entity
+entity <- frn %>% 
+  group_by(organization_entity_type_name,funding_year) %>% 
+  summarise(requests = n(),
+            dollars = sum(funding_commitment_request, na.rm = T))
+
+
+
+
+
+#frn %>% 
   group_by(funding_year) %>% 
   summarise(a = prettyNum( sum(funding_commitment_request,na.rm = T), big.mark = "," ))
 
-## YoY Requests
+#bids <- frn %>% filter(bid_count > 100) %>% arrange(bid_count)
 
-bids <- frn %>% filter(bid_count > 100) %>% arrange(bid_count)
-library(hrbrthemes)
