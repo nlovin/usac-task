@@ -84,15 +84,26 @@ frn %>%
   select(funding_year, funding_request_number, funding_commitment_request)
 
 ## YoY Calculation
-frn %>% 
+yoy <- frn %>% 
   group_by(funding_year) %>% 
   summarise(requests = n(),
             ammount.req = sum(funding_commitment_request,na.rm = T)) %>% 
   mutate(yoy.req = requests - lag(requests),
-         yoy_pct.req = 100*((requests - lag(requests))/requests),
+         yoy_pct.req = round(100*((requests - lag(requests))/requests),1),
          yoy.ammount = ammount.req - lag(ammount.req),
-         yoy_pct.ammount = 100*((ammount.req - lag(ammount.req))/ammount.req))
+         yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1))
+
   
+
+yoy.state <- frn %>% 
+  group_by(state,funding_year) %>% 
+  summarise(requests = n(),
+            ammount.req = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.req = requests - lag(requests),
+         yoy_pct.req = round(100*((requests - lag(requests))/requests),1),
+         yoy.ammount = ammount.req - lag(ammount.req),
+         yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1))
+
 
 ## ---------------------------
 ## Total Requests & Request Ammounts by Service Type
@@ -133,4 +144,14 @@ entity.no_voice <- frn %>%
   summarise(a = prettyNum( sum(funding_commitment_request,na.rm = T), big.mark = "," ))
 
 #bids <- frn %>% filter(bid_count > 100) %>% arrange(bid_count)
+
+
+# data.frame(
+#   funding_year = c(2016, 2017, 2018),
+#   requests = c(121073, 97525, 72757),
+#   ammount.req = c(3597195535, 3231201425, 2854538263),
+#   yoy.req = c(NA, -23548, -24768),
+#   yoy_pct.req = c(NA, -24.1, -34),
+#   yoy.ammount = c(NA, -365994110, -376663162)
+# )
 
