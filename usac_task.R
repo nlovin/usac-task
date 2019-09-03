@@ -93,7 +93,8 @@ yoy <- frn %>%
          yoy.ammount = ammount.req - lag(ammount.req),
          yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1))
 
-  
+## Load state pop data
+data(states)  
 
 yoy.state <- frn %>% 
   group_by(state,funding_year) %>% 
@@ -102,8 +103,22 @@ yoy.state <- frn %>%
   mutate(yoy.req = requests - lag(requests),
          yoy_pct.req = round(100*((requests - lag(requests))/requests),1),
          yoy.ammount = ammount.req - lag(ammount.req),
-         yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1))
+         yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1)) %>% 
+  ungroup() %>% 
+  left_join(., states, by = "state") %>% 
+  group_by(funding_year) %>% 
+  mutate(total.requests_year = sum(requests),
+         total.ammount_year = sum(ammount.req),
+         population = as.numeric(population)) %>% 
+  ungroup() %>% 
+  group_by(state, funding_year) %>% 
+  mutate(pct_of_total.req = 100*(requests/total.requests_year),
+         pct_of_total.ammount = 100*(ammount.req/total.ammount_year),
+         req.state.pct = 100*(requests/population),
+         ammount.per.person = round(ammount.req/population,0))
 
+## Remove state pop data after merging
+rm(states)
 
 ## ---------------------------
 ## Total Requests & Request Ammounts by Service Type
