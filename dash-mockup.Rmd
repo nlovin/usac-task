@@ -13,11 +13,24 @@ output:
 source("setup.R")
 
 
+## ---------------------------
+## check.packages function: install and load multiple R packages.
+## Check to see if packages are installed. Install them if they are not, then load them into the R session.
+
+check.packages <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
 ## Extra packages for the dashboard
 packages<-c("extrafont", "plotly", "leaflet","flexdashboard")
 check.packages(packages)
 
 rm(check.packages, packages)
+
+
 
 
 
