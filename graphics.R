@@ -1,16 +1,65 @@
-dta <- frn %>% 
-  select(funding_request_number, funding_year, state, funding_commitment_request, avg_cost_per_ft_of_plant,dis_pct,pricing_confidentiality,total_monthly_recurring_cost,old_funding_request_number,award_date,form_471_service_type_name,bid_count,months_of_service) %>% 
-  mutate(old_funding_request_number = ifelse(old_funding_request_number=="",NA,old_funding_request_number),
-         repeat_customer = ifelse(is.na(old_funding_request_number), 0, 1))
+## ---------------------------
+##
+## Script name: graphics.R
+##
+## Purpose of script: Generate graphics for USAC task
+##
+## Author: Nathan Lovin
+##
+## Date Created: 2019-09-01
+##
+## 
+## Email: natelovin@gmail.com
+##
+## ---------------------------
+##
+## Notes: 
+##   
+##
+## ---------------------------
 
-skimr::skim(dta)
-
-dta %>% janitor::tabyl(funding_year, repeat_customer)
-dta %>% janitor::tabyl(funding_year, form_471_service_type_name)
-
-summary(lm(funding_commitment_request ~ funding_year + total_monthly_recurring_cost + months_of_service + factor(form_471_service_type_name) + relevel(factor(organization_entity_type_name),"School District"), data=frn))
 
 
+## ---------------------------
+### Requests by Year
+ggplot(yoy,
+       aes(x = funding_year,
+           y = requests)) +
+  geom_bar(fill = "darkseagreen4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.req), "", comma(yoy.req))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=comma) +
+  labs(title = "Annual E-Rate Requests", 
+       x = "", fill = "Funding Year", 
+       subtitle = "2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  theme_ipsum()
+
+
+### Requests by Year
+ggplot(yoy,
+       aes(x = funding_year,
+           y = ammount.req)) +
+  geom_bar(fill = "dodgerblue4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.ammount), "", comma(yoy.ammount))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=comma) +
+  labs(title = "Total Amount Requested for E-Rate Funding", 
+       x = "", y = "ammount requested ($)",
+       fill = "Funding Year", 
+       subtitle = "2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  theme_ipsum()
+
+## ---------------------------
 ### Service Type Requests by Year
 ggplot(service,
        aes(x = factor(form_471_service_type_name),
@@ -248,3 +297,18 @@ frn <- frn %>%
          phone = ifelse(form_471_service_type_name == "Voice", 0, phone))
 
 table(frn$phone) # approx 0.5% requested voice and something else, but it was not coded as voice
+
+## ---------------------------
+## Extra Scratch
+
+dta <- frn %>% 
+  select(funding_request_number, funding_year, state, funding_commitment_request, avg_cost_per_ft_of_plant,dis_pct,pricing_confidentiality,total_monthly_recurring_cost,old_funding_request_number,award_date,form_471_service_type_name,bid_count,months_of_service) %>% 
+  mutate(old_funding_request_number = ifelse(old_funding_request_number=="",NA,old_funding_request_number),
+         repeat_customer = ifelse(is.na(old_funding_request_number), 0, 1))
+
+skimr::skim(dta)
+
+dta %>% janitor::tabyl(funding_year, repeat_customer)
+dta %>% janitor::tabyl(funding_year, form_471_service_type_name)
+
+summary(lm(funding_commitment_request ~ funding_year + total_monthly_recurring_cost + months_of_service + factor(form_471_service_type_name) + relevel(factor(organization_entity_type_name),"School District"), data=frn))
