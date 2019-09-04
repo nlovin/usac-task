@@ -60,3 +60,5 @@ dash-test2.html
 #/*_files/
 
 # End of https://www.gitignore.io/api/r
+
+old-scripts/dash-test2.Rmd
