@@ -9,6 +9,8 @@
 
 # Session Data files
 
+# Local explore data
+data/subset.csv
 
 # User-specific files
 .Ruserdata
@@ -44,6 +46,10 @@ vignettes/*.pdf
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
+
+# Dashboard files
+debug.log
+dash-test2.html
 
 ### R.Bookdown Stack ###
 # R package: bookdown caching files
