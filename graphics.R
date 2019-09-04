@@ -112,7 +112,7 @@ ggplot(data = filter(frn, organization_entity_type_name != "School" & organizati
   )
 
 ## ---------------------------
-## Total Request Ammounts by Service Type
+## Total Request Amounts by Service Type
 ggplot(service,
        aes(x = factor(form_471_service_type_name),
            y = dollars,
@@ -135,7 +135,7 @@ ggplot(service,
   scale_y_continuous(label=dollar_format())
 
 
-## Total Request Ammounts by Entity
+## Total Request Amounts by Entity
 ggplot(entity,
        aes(x = factor(organization_entity_type_name),
            y = dollars,
