@@ -1,12 +1,12 @@
 ## ---------------------------
 ##
-## Script name: usac_task.R
+## Script name: usac_task_clean.R
 ##
 ## Purpose of script: Complete USAC Data Wrangling and Viz. Task
 ##
 ## Author: Nathan Lovin
 ##
-## Date Created: 2019-08-30
+## Date Created: 2019-09-2
 ##
 ## 
 ## Email: natelovin@gmail.com
