@@ -136,6 +136,89 @@ ggplot(entity.no_voice,
 
 
 
+
+
+
+
+
+
+
+filter(yoy, form_471_service_type_name != "Voice")
+
+## ---------------------------
+### Requests by Year, dropping voice
+ggplot(yoy.novoice,
+           aes(x = funding_year,
+               y = requests)) +
+  geom_bar(fill = "darkseagreen4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.req), "", comma(yoy.req))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=comma) +
+  labs(title = "Annual E-Rate Requests", 
+       x = "", y = "Requests (N)",
+       subtitle = "Voice requests excluded | 2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  ggthemes::theme_fivethirtyeight()
+
+### Amount by Year, dropping voice
+ggplot(yoy.novoice,
+       aes(x = funding_year,
+           y = ammount.req)) +
+  geom_bar(fill = "dodgerblue4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.ammount), "", comma(yoy.ammount))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=comma) +
+  labs(title = "Total Amount Requested for E-Rate Funding", 
+       x = "", y = "ammount requested ($)",
+       subtitle = "Voice requests excluded | 2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  ggthemes::theme_fivethirtyeight()
+
+
+### Requests by Year, dropping voice and schools
+ggplot(yoy.no.voice_school,
+       aes(x = funding_year,
+           y = requests)) +
+  geom_bar(fill = "darkseagreen4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.req), "", comma(yoy.req))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=comma) +
+  labs(title = "Annual E-Rate Requests", 
+       x = "", y = "Requests (N)",
+       subtitle = "Voice requests and schools excluded | 2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  ggthemes::theme_fivethirtyeight()
+
+### Amount by year, dropping voice and schools
+ggplot(yoy.no.voice_school,
+       aes(x = funding_year,
+           y = ammount.req)) +
+  geom_bar(fill = "dodgerblue4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.ammount), "", comma(yoy.ammount))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=comma) +
+  labs(title = "Total Amount Requested for E-Rate Funding", 
+       x = "", y = "ammount requested ($)",
+       subtitle = "Voice requests and schools excluded | 2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  ggthemes::theme_fivethirtyeight()
+
 ## ---------------------------
 ### Funding Requests by Entity type by Request type by Year
 ggplot(data = frn) +
@@ -153,8 +236,41 @@ ggplot(data = frn) +
   )
 
 ### Funding Requests by Entity type by Request type by Year
+
+## DROP VOICE
+ggplot(data = filter(frn, form_471_service_type_name != "Voice")) +
+  geom_bar(aes(x = organization_entity_type_name, fill = factor(form_471_service_type_name)),position = "dodge") +
+  scale_colour_discrete(labels = function(x) str_wrap(x, width = 5)) +
+  theme_ipsum() + 
+  scale_fill_ipsum(labels = function(x) str_wrap(x, width = 25)) + 
+  facet_grid(funding_year~.) +
+  labs(title = "Requests by Organization Type", 
+       x = "Organization Type (excluding schools and school districts)", fill = "Service Requested", 
+       subtitle = "2016-2018") +
+  guides(fill=guide_legend(
+    keywidth=0.2,
+    keyheight=0.4,
+    default.unit="inch")
+  )
+
 ## DROP SCHOOL AND DISTRICTS
 ggplot(data = filter(frn, organization_entity_type_name != "School" & organization_entity_type_name != "School District")) +
+  geom_bar(aes(x = organization_entity_type_name, fill = factor(form_471_service_type_name)),position = "dodge") +
+  scale_colour_discrete(labels = function(x) str_wrap(x, width = 5)) +
+  theme_ipsum() + 
+  scale_fill_ipsum(labels = function(x) str_wrap(x, width = 25)) + 
+  facet_grid(funding_year~.) +
+  labs(title = "Requests by Organization Type", 
+       x = "Organization Type (excluding schools and school districts)", fill = "Service Requested", 
+       subtitle = "2016-2018") +
+  guides(fill=guide_legend(
+    keywidth=0.2,
+    keyheight=0.4,
+    default.unit="inch")
+  )
+
+## DROP SCHOOL AND DISTRICTS AND VOICE
+ggplot(data = filter(frn, organization_entity_type_name != "School" & organization_entity_type_name != "School District" & form_471_service_type_name != "Voice")) +
   geom_bar(aes(x = organization_entity_type_name, fill = factor(form_471_service_type_name)),position = "dodge") +
   scale_colour_discrete(labels = function(x) str_wrap(x, width = 5)) +
   theme_ipsum() + 
