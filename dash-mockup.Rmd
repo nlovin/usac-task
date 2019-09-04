@@ -1,0 +1,552 @@
+---
+title: "E-Rate Trends"
+author: "Nathan Lovin"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    social: menu
+    source_code: embed
+---
+
+
+```{r setup, include=FALSE}
+source("setup.R")
+
+
+## Extra packages for the dashboard
+packages<-c("extrafont", "plotly", "leaflet","flexdashboard")
+check.packages(packages)
+
+rm(check.packages, packages)
+
+
+
+## -----------------------------
+## Setup map data
+# Call world shapefile from the rnaturalearth package as a sf object
+states_shp <- ne_states(returnclass = "sf",
+                       country = "United States of America")
+
+# Setup projections
+US.proj <- "+proj=aea +lat_1=33 +lat_2=45 +lat_0=39 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m"
+
+yoy.state_geo <- left_join(states_shp,yoy.state, by = c("postal" = "state"))
+
+US_geo <- yoy.state_geo %>% 
+  filter(name.y != "Alaska" & name.y != "Hawaii")
+
+
+```
+
+Declining Requests
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+### Entity type by Year, dropping Voice requests
+
+```{r yoy.requests, echo=F}
+
+### Requests by Year
+
+p1<-ggplot(yoy,
+       aes(x = funding_year,
+           y = requests)) +
+  geom_bar(fill = "darkseagreen4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.req), "", comma(yoy.req))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=comma) +
+  labs(title = "Annual E-Rate Requests", 
+       x = "", y = "Requests (N)",
+       subtitle = "2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=13),
+        plot.caption = element_text(size=7))
+
+ggplotly(p1)
+
+```
+
+### Total Amount Requested for E-Rate Funding ($)
+```{r yoy.requests2, echo=F}
+
+### Requests by Year
+p2<-ggplot(yoy,
+       aes(x = funding_year,
+           y = ammount.req)) +
+  geom_bar(fill = "dodgerblue4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.ammount), "", comma(yoy.ammount))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=dollar_format()) +
+  labs(title = "Total Amount Requested for E-Rate Funding ($)", 
+       x = "", y = "ammount requested ($)",
+       subtitle = "2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=13),
+        plot.caption = element_text(size=7))
+
+
+ggplotly(p2)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Requests by Year, excluding Voice and Connections
+```{r yoy.requests.novoice.noconnection, echo=F}
+
+
+### Requests by Year, dropping voice and connections
+p2<-ggplot(yoy.no.voice.connections,
+           aes(x = funding_year,
+               y = requests)) +
+  geom_bar(fill = "darkseagreen4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.req), "", comma(yoy.req))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=comma) +
+  labs(title = "Annual E-Rate Requests, excluding Voice and Internal Connections", 
+       x = "", y = "Requests (N)",
+       subtitle = "Voice and Internal Connection requests excluded | 2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=13),
+        plot.subtitle = element_text(size=12),
+        plot.caption = element_text(size=7))
+ggplotly(p2)
+
+```
+
+### Amount by Year, dropping voice
+```{r yoy.requests.novoice.noconnection2, echo=F}
+
+### Amount by Year, dropping voice
+p2<-ggplot(yoy.no.voice.connections,
+       aes(x = funding_year,
+           y = ammount.req)) +
+  geom_bar(fill = "dodgerblue4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.ammount), "", comma(yoy.ammount))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=dollar_format()) +
+  labs(title = "Total Amount Requested for E-Rate Funding ($), excluding Voice and Internal Connections", 
+       x = "", y = "ammount requested ($)",
+       subtitle = "Voice and Internal Connection requests excluded | 2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=13),
+        plot.subtitle = element_text(size=11),
+        plot.caption = element_text(size=7))
+
+ggplotly(p2)
+
+```
+
+
+Requests by Service
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### E-rate Requests by Service Type
+```{r service.yoy, echo=F}
+
+### Service Type Requests by Year
+p1<-ggplot(service,
+       aes(x = factor(form_471_service_type_name),
+           y = requests,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.requests))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.requests), "", percent(yoy_pct.requests))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 2.5) +
+  scale_fill_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+  labs(title = "Annual Requests by Service Type", 
+       x = "Service Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=comma) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=16),
+        plot.caption = element_text(size=7))
+
+ggplotly(p1)
+
+```
+
+
+Row
+-----------------------------------------------------------------------
+
+### Total Request Amounts by Service Type
+
+```{r service.yoy2, echo=F}
+
+### Total Request Amounts by Service Type
+p1<-ggplot(service,
+       aes(x = factor(form_471_service_type_name),
+           y = dollars,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.dollars))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.dollars), "", percent(yoy_pct.dollars))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 2.5) +
+  scale_fill_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+  labs(title = "Total Amount Requested by Service", 
+       x = "Service Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=dollar_format()) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=16),
+        plot.caption = element_text(size=7))
+
+ggplotly(p1)
+
+```
+
+Requests by Org. Type
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### E-rate Requests by Organization Type
+
+```{r entity.yoy, echo=F}
+### Entity type by Year
+p<-ggplot(entity,
+       aes(x = factor(organization_entity_type_name),
+           y = requests,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.requests))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.requests), "", percent(yoy_pct.requests))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 2.5) +
+  scale_fill_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Requests by Organization Type", 
+       x = "Organization Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=comma) +
+    ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=16),
+        plot.caption = element_text(size=7))
+ggplotly(p)
+```
+
+
+Row
+-----------------------------------------------------------------------
+
+### Mean dollars requested by entity type and year
+
+```{r}
+p<-ggplot(entity,
+       aes(x = factor(organization_entity_type_name),
+           y = dollars,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.dollars))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.dollars), "", percent(yoy_pct.dollars))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 2.5) +
+  scale_fill_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Total Amount Requested by Organization Type ($)", 
+       x = "Organization Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=dollar_format()) +
+    ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=16),
+        plot.caption = element_text(size=7))
+ggplotly(p)
+```
+
+
+
+Requests excl. Voice & Connections
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### E-rate Requests by Service Type, Excluding Voice and Connections
+```{r e.rate_no_n, echo=F}
+
+### Entity type by Year, dropping voice and connections
+p<-ggplot(entity.no_voice.connections,
+       aes(x = factor(organization_entity_type_name),
+           y = requests,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.requests))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.requests), "", percent(yoy_pct.requests))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 2.5) +
+  scale_fill_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Requests by Organization Type, Voice and Internal Connection requests excluded", 
+       x = "Organization Type", fill = "Funding Year", 
+       subtitle = "Voice and Internal Connection requests excluded | 2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=comma) +
+    ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=16),
+        plot.subtitle = element_text(size=12),
+        plot.caption = element_text(size=7))
+
+ggplotly(p)
+
+```
+
+
+Row
+-----------------------------------------------------------------------
+
+### Total Request Amounts by Service, Excluding Voice and Connections
+
+```{r e.rate_no_dollar, echo=F}
+
+p1<-ggplot(entity.no_voice.connections,
+       aes(x = factor(organization_entity_type_name),
+           y = dollars,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.dollars))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.dollars), "", percent(yoy_pct.dollars))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 2.5) +
+  scale_fill_ipsum(labels = function(x) str_wrap(x, width = 25)) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Total Request Amount by Service ($), Voice and Internal Connection requests excluded", 
+       x = "Service Type", fill = "Funding Year", 
+       subtitle = "Voice and Internal Connection requests excluded | 2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label= dollar_format()) + 
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=16),
+        plot.subtitle = element_text(size=12),
+        plot.caption = element_text(size=7))
+
+ggplotly(p1)
+
+```
+
+
+Requests by Service and Org.
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Requests by Service and Org.
+```{r e.rate_org_serv.n, echo=F}
+
+## REQUESTS
+p<-ggplot(data = entity.service) +
+  geom_bar(aes(x = factor(funding_year),
+               y = requests,
+               fill = factor(form_471_service_type_name)),
+           position = "dodge",
+           stat = 'identity') +
+  scale_colour_discrete(labels = function(x) str_wrap(x, width = 5)) +
+  ggthemes::theme_fivethirtyeight() + 
+  scale_fill_ipsum(labels = function(x) str_wrap(x, width = 25)) + 
+  facet_wrap(organization_entity_type_name~.,
+             scales = "free") +
+  labs(title = "Annual Requests by Service and Organization", 
+       x = "", fill = "Service Requested", 
+       subtitle = "2016-2018") +
+  guides(fill=guide_legend(
+    keywidth=0.2,
+    keyheight=0.4,
+    default.unit="inch")
+  ) + 
+  scale_y_continuous(label=comma) +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=16),
+        plot.subtitle = element_text(size=12),
+        plot.caption = element_text(size=7))
+
+
+
+ggplotly(p)
+
+```
+
+Amounts by Service and Org.
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Total Amounts Requested by Service and Org.
+
+```{r e.rate_org_serv.dollar, echo=F}
+## DOLLARS
+p1<- entity.service %>% 
+  mutate(dollars = dollars / 10^6) %>% 
+ggplot() +
+  geom_bar(aes(x = factor(funding_year),
+               y = dollars,
+               fill = factor(form_471_service_type_name)),
+           position = "dodge",
+           stat = 'identity', show.legend = F) +
+  scale_colour_discrete(labels = function(x) str_wrap(x, width = 5)) +
+  ggthemes::theme_fivethirtyeight() + 
+  scale_fill_ipsum(labels = function(x) str_wrap(x, width = 25)) + 
+  facet_wrap(organization_entity_type_name~.,scales = "free") +
+  labs(title = "Amount Requested by Service and Entity ($)", 
+       x = "", fill = "Service Requested", 
+       subtitle = "2016-2018") +
+  scale_y_continuous(label=dollar_format(suffix = "M"))
+
+ggplotly(p1)
+
+```
+
+
+
+Maps
+=======================================================================
+
+Column {.tabset}
+-------------------------------------
+    
+### Map 1: E-Fund Dollars Requested per Person, 2016
+    
+```{r}
+m <- US_geo %>% 
+  filter(funding_year==2016) %>% 
+  select(ammount.per.person,everything()) %>% 
+  tm_shape(., projection = US.proj) +
+  tm_layout(frame = FALSE,
+            main.title = "E-Fund Dollars Requested per Person, 2016") +
+  tm_fill(col = "ammount.per.person",
+          breaks = c(1,5,8,10,20,320),
+          title = "Dollars Requested per Person") +
+  tm_borders()
+tmap_leaflet(m)
+```
+
+### Map 2: E-Fund Dollars Requested per Person, 2017
+
+```{r}
+m <- US_geo %>% 
+  filter(funding_year==2017) %>% 
+  select(ammount.per.person,everything()) %>% 
+  tm_shape(., projection = US.proj) +
+  tm_layout(frame = FALSE,
+            main.title = "E-Fund Dollars Requested per Person, 2017") +
+  tm_fill(col = "ammount.per.person",
+          breaks = c(1,5,8,10,20,320),
+          title = "Dollars Requested per Person") +
+  tm_borders()
+tmap_leaflet(m)
+```
+
+### Map 3: E-Fund Dollars Requested per Person, 2018
+
+```{r}
+m <- US_geo %>% 
+  filter(funding_year==2018) %>% 
+  select(ammount.per.person,everything()) %>% 
+  tm_shape(., projection = US.proj) +
+  tm_layout(frame = FALSE,
+            main.title = "E-Fund Dollars Requested per Person, 2018") +
+  tm_fill(col = "ammount.per.person",
+          breaks = c(1,5,8,10,20,320),
+          title = "Dollars Requested per Person") +
+  tm_borders()
+tmap_leaflet(m)
+
+# breaks = c(1,5,8,10,20,320)
+
+```

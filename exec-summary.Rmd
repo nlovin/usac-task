@@ -1,0 +1,410 @@
+---
+title: "Trends in E-Rate Requests to the Universal Service Adminstrative Company, 2016-2018"
+author: "Nathan Lovin"
+geometry: margin=2cm
+output: pdf_document
+header-includes:
+   - \usepackage{floatrow}
+   - \floatsetup[figure]{capposition=top}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+## Run Source File
+
+
+source("setup.R")
+library(extrafont)
+loadfonts()
+
+
+```
+
+## Declining E-Rate Requests
+
+This report provides insight into trends over the past three years in the E-Rate funding requests to the Universal Service Adminstrative Company (USAC). It focuses primarily on delivering possible explanations of the decreased number of requests and amounts requested between 2016 and 2018. Methods of analysis include exploratory and descriptive data analysis, including data visualizations.
+
+Between 2016 and 2017, the number of E-Rate requests dropped from 121,073 to 97,525, which represents a decline of 23,548 requests (24% decline). The total amount requested during this period also declined by 366 million dollars, falling from 3.59 billion dollars in 2016 to 3.23 billion dollars in 2017 (11.2% decline). These trends continued in 2018 with requests and dollars requested falling 34% (24,768 requests) and 13% (376 million dollars) respective to the 2017 numbers (see Figure 2 for reference). 
+
+```{r yoy.requests, echo=F,out.width = "48%"}
+
+### Requests by Year
+
+p1<-ggplot(yoy,
+       aes(x = funding_year,
+           y = requests)) +
+  geom_bar(fill = "darkseagreen4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.req), "", comma(yoy.req))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=comma) +
+  labs(title = "Fig. 1: Annual E-Rate Requests", 
+       x = "", y = "Requests (N)",
+       subtitle = "2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=15),
+        plot.caption = element_text(size=7))
+
+
+### Requests by Year
+p2<-ggplot(yoy,
+       aes(x = funding_year,
+           y = ammount.req)) +
+  geom_bar(fill = "dodgerblue4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.ammount), "", comma(yoy.ammount))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=dollar_format()) +
+  labs(title = "Fig. 2: Total Amount Requested for E-Rate Funding ($)", 
+       x = "", y = "ammount requested ($)",
+       subtitle = "2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=15),
+        plot.caption = element_text(size=7))
+
+p1
+p2
+
+```
+
+## The Decline of Traditional Phone Communication
+
+Digging deeper into the data, it seems likely that a decreased emphasis on telephone communications can explain much of the decline described above. Figure 3 shows that the number of E-Rate requests for voice-related needs fell 47% (15,587 requests) between 2016 and 2017. This number decreased further by 205% (22,426 requests) the following year in 2018. During this time, only internal connections requests saw a similar decline, falling by 6,948 (34%) requests between 2016 and 2017; however, this decline did not continue into 2018.
+
+In dollar terms, decreased emphasis on organizations' telephone and internal connection related needs appears to explain a large portion of the decline of total dollars requested from the E-Rate program. Figure 4 shows that the decrease in voice-related requests resulted in 187 million fewer dollars requested between 2016 and 2017 (a 136% decrease). This number fell again by 113 million between 2017 and 2018 (a 472% decrease). 
+
+Even though the number of internal connections requests remained flat from 2017 to 2018, the total amount requested related to these services continued to decrease, falling 248 million dollars (29% decrease) in 2017 and 141 million dollars (20% decrease) in 2018. These observations suggest that it is the dual decline in voice and internal connections requests that appear responsible for much of the observed decreased in the number of E-Rate funds requested. 
+
+```{r service.yoy, echo=F,out.width = "51%"}
+
+### Service Type Requests by Year
+ggplot(service,
+       aes(x = factor(form_471_service_type_name),
+           y = requests,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.requests))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.requests), "", percent(yoy_pct.requests))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 2.5) +
+  scale_fill_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+  labs(title = "Fig. 3: Annual Requests by Service Type", 
+       x = "Service Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=comma) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=16),
+        plot.caption = element_text(size=7))
+
+### Total Request Amounts by Service Type
+ggplot(service,
+       aes(x = factor(form_471_service_type_name),
+           y = dollars,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.dollars))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.dollars), "", percent(yoy_pct.dollars))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 2.5) +
+  scale_fill_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+  labs(title = "Fig. 4: Total Amount Requested by Service", 
+       x = "Service Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=dollar_format()) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=16),
+        plot.caption = element_text(size=7))
+
+```
+
+[Pew Research has shown](https://www.pewinternet.org/fact-sheet/mobile/) that 70% of adults owned smartphones in 2016. This number was up from 35% in 2011. Further, from 2016 to 2018, the percentage of adults who relied solely on smartphones for internet access increased from 12% to 20%. Perhaps the combination of smartphones reaching critical mass and their increasing use for internet access is driving this trend.
+
+Figures 5 and 6 shows the year-over-year changes in E-Rate requests with voice and internal connection-related needs removed. With these removed, the steep decline observed in Figure 1 is largely mitigated in terms of gross requests and dollars requested, suggesting that these are likely the primary contributors to the overall decline described earlier. 
+
+```{r yoy.requests.novoice.noconnection, echo=F,out.width = "48%"}
+
+
+### Requests by Year, dropping voice and connections
+ggplot(yoy.no.voice.connections,
+           aes(x = funding_year,
+               y = requests)) +
+  geom_bar(fill = "darkseagreen4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.req), "", comma(yoy.req))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=comma) +
+  labs(title = "Fig. 5: Annual E-Rate Requests", 
+       x = "", y = "Requests (N)",
+       subtitle = "Voice and Internal Connection requests excluded | 2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=16),
+        plot.subtitle = element_text(size=12),
+        plot.caption = element_text(size=7))
+
+### Amount by Year, dropping voice
+ggplot(yoy.no.voice.connections,
+       aes(x = funding_year,
+           y = ammount.req)) +
+  geom_bar(fill = "dodgerblue4",
+           stat = 'identity',
+           show.legend = FALSE) +
+  geom_text(aes(label = ifelse(is.na(yoy.ammount), "", comma(yoy.ammount))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_y_continuous(label=dollar_format()) +
+  labs(title = "Fig. 6: Total Amount Requested for E-Rate Funding ($)", 
+       x = "", y = "ammount requested ($)",
+       subtitle = "Voice and Internal Connection requests excluded | 2016 - 2018",
+       caption = "Values above bars represent Year-over-Year changes") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=15),
+        plot.subtitle = element_text(size=11),
+        plot.caption = element_text(size=7))
+
+```
+
+## Trends at the Orginzation Level
+
+It is important to note that the decline in E-Rate requests did not occur uniformly across organizations. Figure 7 shows that schools and school districts are responsible for much of the decline, although decreases in E-Rate requests exist across organization type. Once the above observations are considered, particularly the decline in voice-related requests, the decline largely disappears as Figure 8 shows.
+
+```{r entity.yoy, echo=F,out.width = "51%"}
+### Entity type by Year
+ggplot(entity,
+       aes(x = factor(organization_entity_type_name),
+           y = requests,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.requests))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.requests), "", percent(yoy_pct.requests))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 2.5) +
+  scale_fill_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Fig. 7: Requests by Organization Type", 
+       x = "Organization Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=comma) +
+    ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=16),
+        plot.caption = element_text(size=7))
+
+### Entity type by Year, dropping voice and connections
+ggplot(entity.no_voice.connections,
+       aes(x = factor(organization_entity_type_name),
+           y = requests,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.requests))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.requests), "", percent(yoy_pct.requests))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 2.5) +
+  scale_fill_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Fig. 8: Requests by Organization Type", 
+       x = "Organization Type", fill = "Funding Year", 
+       subtitle = "Voice and Internal Connection requests excluded | 2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=comma) +
+    ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=16),
+        plot.subtitle = element_text(size=12),
+        plot.caption = element_text(size=7))
+
+```
+
+While the story is similar for gross dollars requested, there is one significant difference. After accounting for voice and internal connections, schools largely maintained the same number of requests across time; however, Figure 9 shows that even after trends in voice and internal connections have been accounted for, overall dollars decreased between 2016 and 2017 for schools. Figures 10 and 11 illuminate the underlying cause: even as schools continued to request funds for internet access at consistent rates, the total amount requested for these services dropped precipitously between 2016 and 2017.[^1] At the same time, consortiums' requests for internet access increased dramatically. This suggests that collaborations between schools are increasingly replacing individual contracts, although further investigation is required to confirm.
+
+
+```{r entity.novoice.noconnections2, echo=F, out.width = "51%", fig.align="center", message=F}
+
+ggplot(entity.no_voice.connections,
+       aes(x = factor(organization_entity_type_name),
+           y = dollars,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.dollars))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.dollars), "", percent(yoy_pct.dollars))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 2.5) +
+  scale_fill_ipsum(labels = function(x) str_wrap(x, width = 25)) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Fig. 9: Total Request Amount by Service ($)", 
+       x = "Service Type", fill = "Funding Year", 
+       subtitle = "Voice and Internal Connection requests excluded | 2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label= dollar_format()) + 
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=16),
+        plot.subtitle = element_text(size=12),
+        plot.caption = element_text(size=7))
+
+```
+
+
+
+```{r by.entity_by.service, echo=F,out.width = "49%", message=F}
+## REQUESTS
+ggplot(data = entity.service) +
+  geom_bar(aes(x = factor(funding_year),
+               y = requests,
+               fill = factor(form_471_service_type_name)),
+           position = "dodge",
+           stat = 'identity') +
+  scale_colour_discrete(labels = function(x) str_wrap(x, width = 5)) +
+  ggthemes::theme_fivethirtyeight() + 
+  scale_fill_ipsum(labels = function(x) str_wrap(x, width = 25)) + 
+  facet_wrap(organization_entity_type_name~.,scales = "free") +
+  labs(title = "Fig. 10: Annual Requests by Service and Organization", 
+       x = "", fill = "Service Requested", 
+       subtitle = "2016-2018") +
+  guides(fill=guide_legend(
+    keywidth=0.2,
+    keyheight=0.4,
+    default.unit="inch")
+  ) + 
+  scale_y_continuous(label=comma) +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=14),
+        plot.subtitle = element_text(size=11),
+        plot.caption = element_text(size=7))
+
+## DOLLARS
+ggplot(data = entity.service) +
+  geom_bar(aes(x = factor(funding_year),
+               y = dollars,
+               fill = factor(form_471_service_type_name)),
+           position = "dodge",
+           stat = 'identity') +
+  scale_colour_discrete(labels = function(x) str_wrap(x, width = 5)) +
+  ggthemes::theme_fivethirtyeight() + 
+  scale_fill_ipsum(labels = function(x) str_wrap(x, width = 25)) + 
+  facet_wrap(organization_entity_type_name~.,scales = "free") +
+  labs(title = "Fig. 11: Amount Requested by Service and Organization ($)", 
+       x = "", fill = "Service Requested", 
+       subtitle = "2016-2018") +
+  guides(fill=guide_legend(
+    keywidth=0.2,
+    keyheight=0.4,
+    default.unit="inch")
+  ) + 
+  scale_y_continuous(label=dollar_format()) +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7),
+        legend.title = element_text(size=8),
+        plot.title = element_text(size=14),
+        plot.subtitle = element_text(size=11),
+        plot.caption = element_text(size=7))
+
+```
+
+### Geographic trends
+Geographic explanations were considered, but no clear pattern emerged. After normalizing the number of requests and dollar amounts using state populations, many states along the east coast continued to request higher dollar amounts per person even as the rest of the dollar amounts requested elsewhere declined. Perhaps more granular geographic data, such as county- or municipality-level, would provide more insight into any significant spatial trends. A map is included below for reference.
+
+
+### Summary
+The findings of this report show that a general trend away from traditional phone communication and internal connections is largely responsible for the decrease in E-Rate requests. Additionally, while schools' needs for expensive data transmission and/or internet access services have decreased, consortiums requests have gone up--suggesting that partnerships between schools may be replacing individual contracts. When forecasting for the 2020 budget, I recommend that program managers allocate less money than in years past for voice and internal connections services. Perhaps this money can be reallocated to accomplish more popular requests (e.g. data transmission and internet access) in additional locations.
+
+\setcounter{figure}{11}
+```{r maps,echo=F, out.width = "80%", warning=F, message=F, fig.cap="Dollars Requested per Person Living in State", fig.align="center",fig.pos="H"}
+
+# Call world shapefile from the rnaturalearth package as a sf object
+states_shp <- ne_states(returnclass = "sf",
+                       country = "United States of America")
+
+# Setup projections
+US.proj <- "+proj=aea +lat_1=33 +lat_2=45 +lat_0=39 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m"
+
+yoy.state_geo <- left_join(states_shp,yoy.state, by = c("postal" = "state"))
+
+US_geo <- yoy.state_geo %>% 
+  filter(name.y != "Alaska" & name.y != "Hawaii")
+
+
+US_geo %>% 
+  filter() %>% 
+  tm_shape(., projection = US.proj) +
+  tm_layout(frame = FALSE) +
+  tm_fill(col = "ammount.per.person",
+          style = "quantile") +
+  tm_borders() +
+  tm_facets(by="funding_year") +
+  tm_layout(legend.outside.position = "right" , 
+            legend.outside.size = .1)
+```
+
+
+[^1]: Note: Figures 10 and 11 do not use the same axis scale. This makes internal comparisons of service growth possible, but makes comparison of across organizations difficult.
+
