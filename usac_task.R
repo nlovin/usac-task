@@ -24,7 +24,7 @@
 ## Run Source File
 
 
-source(setup.R)
+source("setup.R")
 
 ## ---------------------------
 ## Access the data
@@ -42,10 +42,18 @@ FRN.status <- read.socrata("https://opendata.usac.org/resource/qdmp-ygft.csv?For
 
 save(FRN.status, file = "data/FRN_status_raw.Rdata") 
 
+## Create subset file to explore data structure
 write_csv(FRN.status, path = "data/FRN_status_raw.csv")
+frn %>%
+  head(500) %>% 
+  write_csv(path = "data/subset.csv")
 
 ## Rdata file is much more efficent at 41MB vs 200MB csv file
 
+## ---------------------------
+## Load data
+
+load("Data/FRN_status_raw.Rdata")
 
 
 ## ---------------------------
@@ -58,23 +66,107 @@ frn <- FRN.status %>%
 
 ## Exploring main variables
 frn %>% skimr::skim(funding_year, funding_request_number, funding_commitment_request)
+frn %>% group_by(funding_year) %>% skimr::skim(funding_request_number, funding_commitment_request,avg_cost_per_ft_of_plant, state,bid_count)
+frn %>% skimr::skim()
 
-
-## Check to see if there are any duplicate funding request ids
+## Double check to see if there are any duplicate funding request ids
 frn %>% 
   count(funding_request_number) %>% 
   filter(n > 1)
 
-### Check for missing funding request ids
+### Double check for missing funding request ids
 frn %>% 
   filter(is.na(funding_request_number))
 
-## Request count by year
+### Double check for missing funding request amounts
 frn %>% 
+  filter(is.na(funding_commitment_request)) %>% 
+  select(funding_year, funding_request_number, funding_commitment_request)
+
+## YoY Calculation
+yoy <- frn %>% 
   group_by(funding_year) %>% 
-  summarise(requests = n())
+  summarise(requests = n(),
+            ammount.req = sum(funding_commitment_request,na.rm = T)) %>% 
+  mutate(yoy.req = requests - lag(requests),
+         yoy_pct.req = round(100*((requests - lag(requests))/requests),1),
+         yoy.ammount = ammount.req - lag(ammount.req),
+         yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1))
+
+## Load state pop data
+data(states)  
+
+yoy.state <- frn %>% 
+  group_by(state,funding_year) %>% 
+  summarise(requests = n(),
+            ammount.req = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.req = requests - lag(requests),
+         yoy_pct.req = round(100*((requests - lag(requests))/requests),1),
+         yoy.ammount = ammount.req - lag(ammount.req),
+         yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1)) %>% 
+  ungroup() %>% 
+  left_join(., states, by = "state") %>% 
+  group_by(funding_year) %>% 
+  mutate(total.requests_year = sum(requests),
+         total.ammount_year = sum(ammount.req),
+         population = as.numeric(population)) %>% 
+  ungroup() %>% 
+  group_by(state, funding_year) %>% 
+  mutate(pct_of_total.req = 100*(requests/total.requests_year),
+         pct_of_total.ammount = 100*(ammount.req/total.ammount_year),
+         req.state.pct = 100*(requests/population),
+         ammount.per.person = round(ammount.req/population,0))
+
+## Remove state pop data after merging
+rm(states)
+
+## ---------------------------
+## Total Requests & Request Ammounts by Service Type
+service <- frn %>% 
+  group_by(form_471_service_type_name,funding_year) %>% 
+  summarise(requests = n(),
+            dollars = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.dollars = dollars - lag(dollars),
+         yoy_pct.dollars = ((dollars - lag(dollars))/dollars),
+         yoy.requests = requests - lag(requests),
+         yoy_pct.requests = ((requests - lag(requests))/requests))
+
+## Total Requests & Request Ammounts by Entity
+entity <- frn %>% 
+  group_by(organization_entity_type_name,funding_year) %>% 
+  summarise(requests = n(),
+            dollars = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.dollars = dollars - lag(dollars),
+         yoy_pct.dollars = ((dollars - lag(dollars))/dollars),
+         yoy.requests = requests - lag(requests),
+         yoy_pct.requests = ((requests - lag(requests))/requests))
+
+## Total Requests & Request Ammounts by Entity, dropping Voice requests
+entity.no_voice <- frn %>% 
+  filter(form_471_service_type_name != "Voice") %>% 
+  group_by(organization_entity_type_name,funding_year) %>% 
+  summarise(requests = n(),
+            dollars = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.dollars = dollars - lag(dollars),
+         yoy_pct.dollars = ((dollars - lag(dollars))/dollars),
+         yoy.requests = requests - lag(requests),
+         yoy_pct.requests = ((requests - lag(requests))/requests))
 
 
+## ---------------------------
+#frn %>% 
+  group_by(funding_year) %>% 
+  summarise(a = prettyNum( sum(funding_commitment_request,na.rm = T), big.mark = "," ))
+
+#bids <- frn %>% filter(bid_count > 100) %>% arrange(bid_count)
 
 
-## YoY Requests
+# data.frame(
+#   funding_year = c(2016, 2017, 2018),
+#   requests = c(121073, 97525, 72757),
+#   ammount.req = c(3597195535, 3231201425, 2854538263),
+#   yoy.req = c(NA, -23548, -24768),
+#   yoy_pct.req = c(NA, -24.1, -34),
+#   yoy.ammount = c(NA, -365994110, -376663162)
+# )
+
