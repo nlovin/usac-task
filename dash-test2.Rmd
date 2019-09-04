@@ -11,14 +11,19 @@ output:
 ```{r setup, include=FALSE}
 library(rlang)
 library(scales)
-library(tidyverse)
 library(viridisLite)
 library(fs)
 library(hrbrthemes)
 library(RSocrata)
 library(plotly)
 library(noncensus)
+library(sp)
+library(sf)
+library(rnaturalearth)
 library(tmap)
+library(leaflet)
+library(grid)
+library(tidyverse)
 library(flexdashboard)
 
 
@@ -96,9 +101,38 @@ entity.no_voice <- frn %>%
          yoy.requests = requests - lag(requests),
          yoy_pct.requests = ((requests - lag(requests))/requests))
 
+
+
+### ------------------------------------------------------------
+## Maps
+
+# Call world shapefile from the rnaturalearth package as a sf object
+states_shp <- ne_states(returnclass = "sf",
+                       country = "United States of America")
+
+
+# Setup projections
+US.proj <- "+proj=aea +lat_1=33 +lat_2=45 +lat_0=39 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m"
+AK.proj <- "+proj=aea +lat_1=55 +lat_2=65 +lat_0=50 +lon_0=-154 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
+HI.proj <- "+proj=aea +lat_1=8 +lat_2=18 +lat_0=13 +lon_0=-153 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
+
+
+yoy.state_geo <- left_join(states_shp,yoy.state, by = c("postal" = "state"))
+
+US_geo <- yoy.state_geo %>% 
+  filter(name.y != "Alaska" & name.y != "Hawaii")
+
+AK_geo <- yoy.state_geo %>% 
+  filter(name.y == "Alaska")
+
+HI_geo <- yoy.state_geo %>% 
+  filter(name.y == "Hawaii") %>% 
+  st_crop(., c(xmin=-162.62, xmax=-153.87, ymin=18.05, ymax=23.68))
+
+
 ```
 
-geom_point
+E-fund Requests (N)
 =======================================================================
 
 Row
@@ -117,7 +151,7 @@ p <- ggplot(service,
            stat = "identity") +
   geom_text(aes(label = ifelse(is.na(yoy_pct.requests), "", percent(yoy_pct.requests))),
             position = position_dodge(width = .9),    # move to center of bars
-            vjust = -0.5,    # nudge above top of bar
+            vjust = -1,    # nudge above top of bar
             size = 3) +
   scale_fill_ipsum() +
   theme_ipsum() +
@@ -127,6 +161,7 @@ p <- ggplot(service,
        subtitle = "2016-2018",
        caption = "Percentages represent Year-over-Year changes") +
   scale_y_continuous(label=comma)
+
 ggplotly(p)
 ```
 
@@ -329,4 +364,61 @@ p <- frn %>%
   scale_x_discrete(labels = function(x) str_wrap(x, width = 20))
 
 ggplotly(p)
+```
+
+Geographic Inisghts
+=======================================================================
+
+Column {.tabset}
+-------------------------------------
+    
+### Map 1: E-Fund Dollars Requested per Person, 2016
+    
+```{r}
+m <- US_geo %>% 
+  filter(funding_year==2016) %>% 
+  select(ammount.per.person,everything()) %>% 
+  tm_shape(., projection = US.proj) +
+  tm_layout(frame = FALSE,
+            main.title = "E-Fund Dollars Requested per Person, 2016") +
+  tm_fill(col = "ammount.per.person",
+          breaks = c(1,5,8,10,20,320),
+          title = "Dollars Requested per Person") +
+  tm_borders()
+tmap_leaflet(m)
+```
+
+### Map 2: E-Fund Dollars Requested per Person, 2017
+
+```{r}
+m <- US_geo %>% 
+  filter(funding_year==2017) %>% 
+  select(ammount.per.person,everything()) %>% 
+  tm_shape(., projection = US.proj) +
+  tm_layout(frame = FALSE,
+            main.title = "E-Fund Dollars Requested per Person, 2017") +
+  tm_fill(col = "ammount.per.person",
+          breaks = c(1,5,8,10,20,320),
+          title = "Dollars Requested per Person") +
+  tm_borders()
+tmap_leaflet(m)
+```
+
+### Map 3: E-Fund Dollars Requested per Person, 2018
+
+```{r}
+m <- US_geo %>% 
+  filter(funding_year==2018) %>% 
+  select(ammount.per.person,everything()) %>% 
+  tm_shape(., projection = US.proj) +
+  tm_layout(frame = FALSE,
+            main.title = "E-Fund Dollars Requested per Person, 2018") +
+  tm_fill(col = "ammount.per.person",
+          breaks = c(1,5,8,10,20,320),
+          title = "Dollars Requested per Person") +
+  tm_borders()
+tmap_leaflet(m)
+
+# breaks = c(1,5,8,10,20,320)
+
 ```
