@@ -93,6 +93,31 @@ yoy <- frn %>%
          yoy.ammount = ammount.req - lag(ammount.req),
          yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1))
 
+
+## YoY Calculation, no voice
+yoy.novoice <- frn %>% 
+  filter(form_471_service_type_name != "Voice") %>% 
+  group_by(funding_year) %>% 
+  summarise(requests = n(),
+            ammount.req = sum(funding_commitment_request,na.rm = T)) %>% 
+  mutate(yoy.req = requests - lag(requests),
+         yoy_pct.req = round(100*((requests - lag(requests))/requests),1),
+         yoy.ammount = ammount.req - lag(ammount.req),
+         yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1))
+
+
+## YoY Calculation, no voice, no school
+yoy.no.voice_school <- frn %>% 
+  filter(organization_entity_type_name != "School" & organization_entity_type_name != "School District" & form_471_service_type_name != "Voice") %>% 
+  group_by(funding_year) %>% 
+  summarise(requests = n(),
+            ammount.req = sum(funding_commitment_request,na.rm = T)) %>% 
+  mutate(yoy.req = requests - lag(requests),
+         yoy_pct.req = round(100*((requests - lag(requests))/requests),1),
+         yoy.ammount = ammount.req - lag(ammount.req),
+         yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1))
+
+
 ## Load state pop data
 data(states)  
 
@@ -152,6 +177,28 @@ entity.no_voice <- frn %>%
          yoy.requests = requests - lag(requests),
          yoy_pct.requests = ((requests - lag(requests))/requests))
 
+
+
+entity.service <- frn %>% 
+  group_by(organization_entity_type_name,form_471_service_type_name,funding_year) %>% 
+  summarise(requests = n(),
+            dollars = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.dollars = dollars - lag(dollars),
+         yoy_pct.dollars = ((dollars - lag(dollars))/dollars),
+         yoy.requests = requests - lag(requests),
+         yoy_pct.requests = ((requests - lag(requests))/requests))
+
+
+
+
+
+
+## ---------------------------
+## Models
+
+summary(lm(yoy.requests~factor(organization_entity_type_name) + factor(funding_year) + factor(form_471_service_type_name), data = entity.service))
+
+summary(lm(requests~factor(organization_entity_type_name) + factor(funding_year) + factor(form_471_service_type_name), data = entity.service))
 
 ## ---------------------------
 #frn %>% 
