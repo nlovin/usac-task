@@ -1,0 +1,332 @@
+---
+title: "test2"
+author: "Nathan Lovin"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    social: menu
+    source_code: embed
+---
+
+```{r setup, include=FALSE}
+library(rlang)
+library(scales)
+library(tidyverse)
+library(viridisLite)
+library(fs)
+library(hrbrthemes)
+library(RSocrata)
+library(plotly)
+library(noncensus)
+library(tmap)
+library(flexdashboard)
+
+
+load("Data/FRN_status_raw.Rdata")
+
+frn <- FRN.status %>% 
+  filter(between(funding_year,2016,2018))
+
+## YoY Calculation
+yoy <- frn %>% 
+  group_by(funding_year) %>% 
+  summarise(requests = n(),
+            ammount.req = sum(funding_commitment_request,na.rm = T)) %>% 
+  mutate(yoy.req = requests - lag(requests),
+         yoy_pct.req = round(100*((requests - lag(requests))/requests),1),
+         yoy.ammount = ammount.req - lag(ammount.req),
+         yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1))
+
+## Load state pop data
+data(states)  
+
+yoy.state <- frn %>% 
+  group_by(state,funding_year) %>% 
+  summarise(requests = n(),
+            ammount.req = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.req = requests - lag(requests),
+         yoy_pct.req = round(100*((requests - lag(requests))/requests),1),
+         yoy.ammount = ammount.req - lag(ammount.req),
+         yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1)) %>% 
+  ungroup() %>% 
+  left_join(., states, by = "state") %>% 
+  group_by(funding_year) %>% 
+  mutate(total.requests_year = sum(requests),
+         total.ammount_year = sum(ammount.req),
+         population = as.numeric(population)) %>% 
+  ungroup() %>% 
+  group_by(state, funding_year) %>% 
+  mutate(pct_of_total.req = 100*(requests/total.requests_year),
+         pct_of_total.ammount = 100*(ammount.req/total.ammount_year),
+         req.state.pct = 100*(requests/population),
+         ammount.per.person = round(ammount.req/population,0))
+
+## Remove state pop data after merging
+rm(states)
+
+## ---------------------------
+## Total Requests & Request Ammounts by Service Type
+service <- frn %>% 
+  group_by(form_471_service_type_name,funding_year) %>% 
+  summarise(requests = n(),
+            dollars = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.dollars = dollars - lag(dollars),
+         yoy_pct.dollars = ((dollars - lag(dollars))/dollars),
+         yoy.requests = requests - lag(requests),
+         yoy_pct.requests = ((requests - lag(requests))/requests))
+
+## Total Requests & Request Ammounts by Entity
+entity <- frn %>% 
+  group_by(organization_entity_type_name,funding_year) %>% 
+  summarise(requests = n(),
+            dollars = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.dollars = dollars - lag(dollars),
+         yoy_pct.dollars = ((dollars - lag(dollars))/dollars),
+         yoy.requests = requests - lag(requests),
+         yoy_pct.requests = ((requests - lag(requests))/requests))
+
+## Total Requests & Request Ammounts by Entity, dropping Voice requests
+entity.no_voice <- frn %>% 
+  filter(form_471_service_type_name != "Voice") %>% 
+  group_by(organization_entity_type_name,funding_year) %>% 
+  summarise(requests = n(),
+            dollars = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.dollars = dollars - lag(dollars),
+         yoy_pct.dollars = ((dollars - lag(dollars))/dollars),
+         yoy.requests = requests - lag(requests),
+         yoy_pct.requests = ((requests - lag(requests))/requests))
+
+```
+
+geom_point
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Service Type Requests by Year
+
+```{r}
+p <- ggplot(service,
+       aes(x = factor(form_471_service_type_name),
+           y = requests,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.requests))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.requests), "", percent(yoy_pct.requests))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_fill_ipsum() +
+  theme_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Requests by Service Type", 
+       x = "Service Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=comma)
+ggplotly(p)
+```
+
+
+### Entity type by Year
+
+```{r}
+p <- ggplot(entity,
+       aes(x = factor(organization_entity_type_name),
+           y = requests,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.requests))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.requests), "", percent(yoy_pct.requests))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_fill_ipsum() +
+  theme_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Requests by Organization Type", 
+       x = "Organization Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=comma)
+
+ggplotly(p)
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Entity type by Year, dropping Voice requests
+
+```{r}
+p <- ggplot(entity.no_voice,
+       aes(x = factor(organization_entity_type_name),
+           y = requests,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.requests))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.requests), "", percent(yoy_pct.requests))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_fill_ipsum() +
+  theme_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Requests by Organization Type", 
+       x = "Organization Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=comma)            # Add a loess smoothed fit curve with confidence region
+ggplotly(p)
+```
+
+### Constraining Slope with stat_smooth
+
+```{r}
+p <- ggplot(data = frn) +
+  geom_bar(aes(x = organization_entity_type_name, fill = factor(form_471_service_type_name)),position = "dodge") +
+  theme_ipsum() + 
+  scale_fill_ipsum(labels = function(x) str_wrap(x, width = 25)) + 
+  facet_grid(funding_year~.) +
+  labs(title = "Requests by Organization Type", 
+       x = "Organization Type", fill = "Service Requested", 
+       subtitle = "2016-2018") +
+  guides(fill=guide_legend(
+    keywidth=0.2,
+    keyheight=0.4,
+    default.unit="inch")
+  )
+ggplotly(p)
+```
+
+Amounts Requested ($)
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Total Request Ammounts by Service Type
+
+```{r}
+p <- ggplot(service,
+       aes(x = factor(form_471_service_type_name),
+           y = dollars,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.dollars))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.dollars), "", percent(yoy_pct.dollars))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_fill_ipsum() +
+  theme_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Total Request Amount by Service", 
+       x = "Service Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=dollar_format())
+ggplotly(p)
+```
+
+### Total Request Amounts by Entity
+
+```{r}
+p <- ggplot(entity,
+       aes(x = factor(organization_entity_type_name),
+           y = dollars,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.dollars))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.dollars), "", percent(yoy_pct.dollars))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_fill_ipsum() +
+  theme_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Total Request Amount by Service", 
+       x = "Service Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label= dollar_format())
+
+ggplotly(p)
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Mean dollars requested by entity type and year
+
+```{r}
+p <- frn %>% 
+  group_by(organization_entity_type_name, funding_year) %>% 
+  summarise(mean_request = mean(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.ammount = mean_request - lag(mean_request),
+         yoy_pct.ammount = ((mean_request - lag(mean_request))/mean_request)) %>% 
+  ggplot(aes(x = organization_entity_type_name, ## --- ggplot begins here --- ##
+             y = mean_request, 
+             fill = factor(funding_year), 
+             group = factor(funding_year),
+             label = percent(yoy_pct.ammount))) + 
+  geom_bar(stat = "identity", 
+           position = "dodge") +
+  labs(title = "Average Request Amount ($) by Organization", 
+       x = "Organization Type", 
+       y = "Avg. Request", 
+       fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.ammount), "", percent(yoy_pct.ammount))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  theme_ipsum() +
+  scale_fill_ipsum() +
+  scale_y_continuous(labels = dollar_format())
+ggplotly(p)
+```
+
+### Mean dollars requested by service type and year
+
+```{r}
+p <- frn %>% 
+  group_by(form_471_service_type_name, funding_year) %>% 
+  summarise(mean_request = mean(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.ammount = mean_request - lag(mean_request),
+         yoy_pct.ammount = ((mean_request - lag(mean_request))/mean_request)) %>% 
+  ggplot(aes(x = form_471_service_type_name, ## --- ggplot begins here --- ##
+             y = mean_request, fill = factor(funding_year), 
+             group = factor(funding_year),
+             label = percent(yoy_pct.ammount))) + 
+  geom_bar(stat = "identity", 
+           position = "dodge") +
+  labs(title = "Average Request Amount ($) by Service", 
+       x = "Service Type", 
+       y = "Avg. Request", 
+       fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.ammount), "", percent(yoy_pct.ammount))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  theme_ipsum() +
+  scale_fill_ipsum() +
+  scale_y_continuous(labels = dollar_format()) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20))
+
+ggplotly(p)
+```
