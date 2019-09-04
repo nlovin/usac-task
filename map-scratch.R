@@ -64,8 +64,21 @@ US_geo %>%
   tm_fill(col = "ammount.per.person",
           style = "quantile") +
   tm_borders() +
-  tm_facets(by="funding_year")
+  tm_facets(by="funding_year") +
+  tm_layout(legend.outside.position = "right" , legend.outside.size = .1)
 
+
+m <- US_geo %>% 
+  filter(funding_year==2018) %>% 
+  select(ammount.per.person,everything()) %>% 
+  tm_shape(., projection = US.proj) +
+  tm_layout(frame = FALSE,
+            main.title = "E-Fund Dollars Requested per Person, 2018") +
+  tm_fill(col = "ammount.per.person",
+          breaks = c(1,5,8,10,20,320),
+          title = "Dollars Requested per Person") +
+  tm_borders()
+tmap_leaflet(m)
 
 US_geo %>% 
   filter() %>% 
