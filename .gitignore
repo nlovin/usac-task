@@ -29,6 +29,10 @@ secret.R
 # Output files from R CMD check
 /*.Rcheck/
 
+# Output files from Rmarkdpwm
+exec-summary.pdf
+exec-summary_files/
+
 # RStudio files
 .Rproj.user/
 
