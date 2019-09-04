@@ -11,7 +11,7 @@ check.packages <- function(pkg){
 
 
 # install packages
-packages<-c("rlang", "scales", "tidyverse","RSocrata", "fs", "hrbrthemes")
+packages<-c("rlang", "scales", "tidyverse","RSocrata", "fs", "hrbrthemes", "noncensus", "rnaturalearth")
 check.packages(packages)
 
 rm(check.packages, packages)
