@@ -57,31 +57,12 @@ load("Data/FRN_status_raw.Rdata")
 
 
 ## ---------------------------
-## Wrangling and Exploring
+## Wrangling
 
 ## Filter for years between 2016 and 2018
 
 frn <- FRN.status %>% 
   filter(between(funding_year,2016,2018))
-
-## Exploring main variables
-frn %>% skimr::skim(funding_year, funding_request_number, funding_commitment_request)
-frn %>% group_by(funding_year) %>% skimr::skim(funding_request_number, funding_commitment_request,avg_cost_per_ft_of_plant, state,bid_count)
-frn %>% skimr::skim()
-
-## Double check to see if there are any duplicate funding request ids
-frn %>% 
-  count(funding_request_number) %>% 
-  filter(n > 1)
-
-### Double check for missing funding request ids
-frn %>% 
-  filter(is.na(funding_request_number))
-
-### Double check for missing funding request amounts
-frn %>% 
-  filter(is.na(funding_commitment_request)) %>% 
-  select(funding_year, funding_request_number, funding_commitment_request)
 
 ## YoY Calculation
 yoy <- frn %>% 
@@ -117,6 +98,17 @@ yoy.no.voice_school <- frn %>%
          yoy.ammount = ammount.req - lag(ammount.req),
          yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1))
 
+## YoY Calculation, no voice, no connections
+yoy.no.voice.connections <- frn %>% 
+  filter(form_471_service_type_name != "Voice",
+         form_471_service_type_name != "Internal Connections") %>% 
+  group_by(funding_year) %>% 
+  summarise(requests = n(),
+            ammount.req = sum(funding_commitment_request,na.rm = T)) %>% 
+  mutate(yoy.req = requests - lag(requests),
+         yoy_pct.req = round(100*((requests - lag(requests))/requests),1),
+         yoy.ammount = ammount.req - lag(ammount.req),
+         yoy_pct.ammount = round(100*((ammount.req - lag(ammount.req))/ammount.req),1))
 
 ## Load state pop data
 data(states)  
@@ -177,8 +169,19 @@ entity.no_voice <- frn %>%
          yoy.requests = requests - lag(requests),
          yoy_pct.requests = ((requests - lag(requests))/requests))
 
+## Total Requests & Request Ammounts by Entity, dropping Voice\Internal Connections requests
+entity.no_voice.connections <- frn %>% 
+  filter(form_471_service_type_name != "Voice",
+         form_471_service_type_name != "Internal Connections") %>% 
+  group_by(organization_entity_type_name,funding_year) %>% 
+  summarise(requests = n(),
+            dollars = sum(funding_commitment_request, na.rm = T)) %>% 
+  mutate(yoy.dollars = dollars - lag(dollars),
+         yoy_pct.dollars = ((dollars - lag(dollars))/dollars),
+         yoy.requests = requests - lag(requests),
+         yoy_pct.requests = ((requests - lag(requests))/requests))
 
-
+## Group by entity and service
 entity.service <- frn %>% 
   group_by(organization_entity_type_name,form_471_service_type_name,funding_year) %>% 
   summarise(requests = n(),
@@ -192,6 +195,30 @@ entity.service <- frn %>%
 
 
 
+## ---------------------------
+## Exploratory
+
+## Exploring main variables
+frn %>% skimr::skim(funding_year, funding_request_number, funding_commitment_request)
+frn %>% group_by(funding_year) %>% skimr::skim(funding_request_number, funding_commitment_request,avg_cost_per_ft_of_plant, state,bid_count)
+frn %>% skimr::skim()
+
+## Double check to see if there are any duplicate funding request ids
+frn %>% 
+  count(funding_request_number) %>% 
+  filter(n > 1)
+
+### Double check for missing funding request ids
+frn %>% 
+  filter(is.na(funding_request_number))
+
+### Double check for missing funding request amounts
+frn %>% 
+  filter(is.na(funding_commitment_request)) %>% 
+  select(funding_year, funding_request_number, funding_commitment_request)
+
+
+
 
 ## ---------------------------
 ## Models
@@ -199,6 +226,8 @@ entity.service <- frn %>%
 summary(lm(yoy.requests~factor(organization_entity_type_name) + factor(funding_year) + factor(form_471_service_type_name), data = entity.service))
 
 summary(lm(requests~factor(organization_entity_type_name) + factor(funding_year) + factor(form_471_service_type_name), data = entity.service))
+
+
 
 ## ---------------------------
 #frn %>% 

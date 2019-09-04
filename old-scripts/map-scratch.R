@@ -65,7 +65,8 @@ US_geo %>%
           style = "quantile") +
   tm_borders() +
   tm_facets(by="funding_year") +
-  tm_layout(legend.outside.position = "right" , legend.outside.size = .1)
+  tm_layout(legend.outside.position = "right" , 
+            legend.outside.size = .1)
 
 
 m <- US_geo %>% 

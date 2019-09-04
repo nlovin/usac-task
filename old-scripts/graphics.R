@@ -133,7 +133,27 @@ ggplot(entity.no_voice,
        caption = "Percentages represent Year-over-Year changes") +
   scale_y_continuous(label=comma)
 
-
+### Entity type by Year, dropping Voice and connection requests
+ggplot(entity.no_voice.connections,
+       aes(x = factor(organization_entity_type_name),
+           y = requests,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.requests))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.requests), "", percent(yoy_pct.requests))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_fill_ipsum() +
+  theme_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Requests by Organization Type", 
+       x = "Organization Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label=comma)
 
 
 
@@ -182,9 +202,26 @@ ggplot(yoy.novoice,
        caption = "Values above bars represent Year-over-Year changes") +
   ggthemes::theme_fivethirtyeight()
 
+### Requests by year, dropping voice and internal connections
+entity.service %>% 
+  filter(form_471_service_type_name != "Voice",
+         form_471_service_type_name != "Internal Connections") %>% 
+  ggplot() +
+  geom_bar(aes(x = funding_year, y = requests), stat = 'identity')
+
+### Dollars Requested by year, dropping voice and internal connections
+entity.service %>% 
+  filter(form_471_service_type_name != "Voice",
+         form_471_service_type_name != "Internal Connections") %>% 
+  ggplot() +
+  geom_bar(aes(x = funding_year, y = dollars), stat = 'identity')
+
+
+
+
 
 ### Requests by Year, dropping voice and schools
-ggplot(yoy.no.voice_school,
+ggplot(yoy.no.voice.connections,
        aes(x = funding_year,
            y = requests)) +
   geom_bar(fill = "darkseagreen4",
@@ -202,7 +239,7 @@ ggplot(yoy.no.voice_school,
   ggthemes::theme_fivethirtyeight()
 
 ### Amount by year, dropping voice and schools
-ggplot(yoy.no.voice_school,
+ggplot(yoy.no.voice.connections,
        aes(x = funding_year,
            y = ammount.req)) +
   geom_bar(fill = "dodgerblue4",
@@ -326,6 +363,31 @@ ggplot(entity,
             vjust = -0.5,    # nudge above top of bar
             size = 3) +
   scale_fill_ipsum() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(title = "Total Request Amount by Service", 
+       x = "Service Type", fill = "Funding Year", 
+       subtitle = "2016-2018",
+       caption = "Percentages represent Year-over-Year changes") +
+  scale_y_continuous(label= dollar_format()) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.text=element_text(size=7),
+        axis.text.x = element_text(size=7),
+        axis.text.y = element_text(size=7))
+
+## Total Request Amounts by Entity, dropping voice and connections
+ggplot(entity.no_voice.connections,
+       aes(x = factor(organization_entity_type_name),
+           y = dollars,
+           fill = factor(funding_year),
+           group = factor(funding_year),
+           label = percent(yoy_pct.dollars))) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  geom_text(aes(label = ifelse(is.na(yoy_pct.dollars), "", percent(yoy_pct.dollars))),
+            position = position_dodge(width = .9),    # move to center of bars
+            vjust = -0.5,    # nudge above top of bar
+            size = 3) +
+  scale_fill_ipsum() +
   theme_ipsum() +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
   labs(title = "Total Request Amount by Service", 
@@ -333,8 +395,6 @@ ggplot(entity,
        subtitle = "2016-2018",
        caption = "Percentages represent Year-over-Year changes") +
   scale_y_continuous(label= dollar_format())
-
-
 
 
 
@@ -394,6 +454,54 @@ frn %>%
   scale_x_discrete(labels = function(x) str_wrap(x, width = 20))
 
 
+## ---------------------------
+## Grouped by Entity and Service
+
+
+## REQUESTS
+ggplot(data = entity.service) +
+  geom_bar(aes(x = factor(funding_year),
+               y = requests,
+               fill = factor(form_471_service_type_name)),
+           position = "dodge",
+           stat = 'identity') +
+  scale_colour_discrete(labels = function(x) str_wrap(x, width = 5)) +
+  ggthemes::theme_fivethirtyeight() + 
+  scale_fill_ipsum(labels = function(x) str_wrap(x, width = 25)) + 
+  facet_wrap(.~organization_entity_type_name,
+             scales = "free") +
+  labs(title = "Amount Requested by Service and Entity ($)", 
+       x = "", fill = "Service Requested", 
+       subtitle = "2016-2018") +
+  guides(fill=guide_legend(
+    keywidth=0.2,
+    keyheight=0.4,
+    default.unit="inch")
+  ) + 
+  scale_y_continuous(label=comma)
+
+## DOLLARS
+entity.service %>% 
+  mutate(dollars = dollars / 10^6) %>% 
+ggplot() +
+  geom_bar(aes(x = factor(funding_year),
+               y = dollars,
+               fill = factor(form_471_service_type_name)),
+           position = "dodge",
+           stat = 'identity') +
+  scale_colour_discrete(labels = function(x) str_wrap(x, width = 5)) +
+  ggthemes::theme_fivethirtyeight() + 
+  scale_fill_ipsum(labels = function(x) str_wrap(x, width = 25)) + 
+  facet_wrap(organization_entity_type_name~.,scales = "free") +
+  labs(title = "Amount Requested by Service and Entity ($)", 
+       x = "", fill = "Service Requested", 
+       subtitle = "2016-2018") +
+  guides(fill=guide_legend(
+    keywidth=0.2,
+    keyheight=0.4,
+    default.unit="inch")
+  ) +
+  scale_y_continuous(label=dollar_format(suffix = "M"))
 
 
 
@@ -401,9 +509,9 @@ frn %>%
 
 
 
-
-
-
+scale_y_continuous(labels = paste0("$",dollars, "M"),
+                   breaks = 10^6 * dollars
+)
 
 
 
