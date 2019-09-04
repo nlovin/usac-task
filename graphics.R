@@ -59,6 +59,9 @@ ggplot(yoy,
        caption = "Values above bars represent Year-over-Year changes") +
   theme_ipsum()
 
+
+
+
 ## ---------------------------
 ### Service Type Requests by Year
 ggplot(service,
@@ -81,6 +84,9 @@ ggplot(service,
        subtitle = "2016-2018",
        caption = "Percentages represent Year-over-Year changes") +
   scale_y_continuous(label=comma)
+
+
+
 
 ## ---------------------------
 ### Entity type by Year
@@ -127,6 +133,9 @@ ggplot(entity.no_voice,
        caption = "Percentages represent Year-over-Year changes") +
   scale_y_continuous(label=comma)
 
+
+
+
 ## ---------------------------
 ### Funding Requests by Entity type by Request type by Year
 ggplot(data = frn) +
@@ -159,6 +168,9 @@ ggplot(data = filter(frn, organization_entity_type_name != "School" & organizati
     keyheight=0.4,
     default.unit="inch")
   )
+
+
+
 
 ## ---------------------------
 ## Total Request Amounts by Service Type
@@ -205,6 +217,9 @@ ggplot(entity,
        subtitle = "2016-2018",
        caption = "Percentages represent Year-over-Year changes") +
   scale_y_continuous(label= dollar_format())
+
+
+
 
 
 ## ---------------------------
@@ -261,6 +276,21 @@ frn %>%
   scale_fill_ipsum() +
   scale_y_continuous(labels = dollar_format()) +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 20))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
